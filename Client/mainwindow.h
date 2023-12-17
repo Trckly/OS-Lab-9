@@ -5,12 +5,16 @@
 #include <ws2tcpip.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <regex>
+#include <string>
 #include <QMainWindow>
 #include <QMessageBox>
 
 
 #define DEFAULT_BUFLEN 512
-#define DEFAULT_PORT "27015"
+#define DEFAULT_PORT "53"
+#define DEFAULT_ANDRII_PATH "D:\\OS\\Lab09_OS\\SearchDirectory"
+#define DEFAULT_DANYLO_PATH "C:\\Users\\bossofthisgym\\Documents"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -27,6 +31,14 @@ public:
     ~MainWindow();
 
     int SendServerRequest(QString MessageToSend);
+
+    void DivideReceivedMessage(char* RecvMessage);
+
+    void OutputReceivedData(QVector<std::string> FileNames, QVector<std::string> DateTime, std::string Bytes);
+
+    void ClearLists();
+
+    void CastToRelevantPath(QString& InitialPath);
 
 private slots:
     void on_actionInstruction_triggered();
