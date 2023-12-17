@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+void ClearLists();
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -12,7 +14,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->radioButton->setChecked(false);
     ui->PathLineEdit->setDisabled(true);
 
-    ipAddr = "10.211.55.6";
+    ui->BytesSumText->setReadOnly(true);
+
+    ipAddr = "10.0.1.15";
+    // ipAddr = "10.211.55.6";
 }
 
 MainWindow::~MainWindow()
@@ -119,6 +124,8 @@ int MainWindow::SendServerRequest(QString MessageToSend){
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
         QString LogMessage;
         if ( iResult > 0 ){
+            DivideReceivedMessage(recvbuf);
+
             LogMessage += "Bytes received: " + QString::number(iResult) + "\nReceived message: " + recvbuf;
             QMessageBox::information(this, "Output", LogMessage);
         }
@@ -160,7 +167,7 @@ void MainWindow::on_pushButton_clicked()
 {
     QString ExtentionText = ui->ExtentionLineEdit->text();
     if(ExtentionText.isEmpty()){
-        QMessageBox::information(this, "Assertion", "You have to enter file extention!");
+        QMessageBox::critical(this, "Assertion", "You have to enter file extention!");
         return;
     }
 
@@ -169,27 +176,111 @@ void MainWindow::on_pushButton_clicked()
     }
 
     for(int i = 1; i < ExtentionText.size(); ++i){
-        if(ExtentionText[i].isDigit()){
-            if(isInapropriateCharacter(ExtentionText[i].toLatin1())){
-                QMessageBox::information(this, "Assertion", "You have illegal characters in file extention name!");
-                return;
-            }
-            if(i == ExtentionText.size() - 1 && ExtentionText[i] == '.'){
-                QMessageBox::information(this, "Assertion", "You cannot use dot (.) in the end of file extention name!");
-                return;
-            }
+        if(!ExtentionText[i].isLetter()){
+            QMessageBox::critical(this, "Assertion", "You have illegal characters in file extention name!");
+            return;
         }
     }
 
     QString PathText;
     if(!ui->radioButton->isChecked()){
-        PathText = "default";
+        PathText = DEFAULT_ANDRII_PATH;
     }
     else{
         PathText = ui->PathLineEdit->text();
+        CastToRelevantPath(PathText);
     }
 
-    QString WrappedMessage = ExtentionText + '|' + PathText;
+    QString WrappedMessage = PathText + '|' + ExtentionText;
     SendServerRequest(WrappedMessage);
 }
 
+void MainWindow::DivideReceivedMessage(char* RecvMessage)
+{
+    std::string Data(RecvMessage);
+
+    if(Data[0] == '<'){
+        ClearLists();
+        Data.erase(Data.begin());
+        Data.erase(Data.end() - 1);
+        QMessageBox::critical(this, "Server Error Message", QString::fromStdString(Data));
+        return;
+    }
+
+    std::string Name, DateTime, Bytes;
+    QVector<std::string> NameUnits;
+    QVector<std::string> DateUnits;
+
+    std::regex regular("[^\\?]+");
+    auto words_begin = std::sregex_iterator(Data.begin(), Data.end(), regular);
+    auto words_end = std::sregex_iterator();
+
+    if(words_begin != words_end)
+    {
+        std::smatch match_result = *words_begin;
+        Name = match_result.str();
+        words_begin++;
+    }
+
+    if(words_begin != words_end)
+    {
+        std::smatch match_result = *words_begin;
+        DateTime = match_result.str();
+        words_begin++;
+    }
+
+    if(words_begin != words_end)
+    {
+        std::smatch match_result = *words_begin;
+        Bytes = match_result.str();
+    }
+
+    std::regex regular_name("[^\\|]+");
+    auto words_begin_name = std::sregex_iterator(Name.begin(), Name.end(), regular_name);
+    auto words_end_name = std::sregex_iterator();
+    for(auto i = words_begin_name; i != words_end_name; ++i){
+        std::smatch match_result = *i;
+        NameUnits.append(match_result.str());
+    }
+
+    std::regex regular_date("[^\\|]+");
+    auto words_begin_date = std::sregex_iterator(DateTime.begin(), DateTime.end(), regular_date);
+    auto words_end_date = std::sregex_iterator();
+    for(auto i = words_begin_date; i != words_end_date; ++i){
+        std::smatch match_result = *i;
+        DateUnits.append(match_result.str());
+    }
+
+   OutputReceivedData(NameUnits, DateUnits, Bytes);
+}
+
+void MainWindow::ClearLists(){
+    ui->NameList->clear();
+    ui->DateList->clear();
+    ui->BytesSumText->clear();
+}
+
+void MainWindow::OutputReceivedData(QVector<std::string> FileNames, QVector<std::string> DateTime, std::string Bytes)
+{
+    ClearLists();
+    ui->BytesSumText->setText(QString::fromStdString(Bytes));
+
+    for(int i = 0; i < FileNames.size(); ++i)
+    {
+        // Create QListWidgetItem objects and add them to the QLists
+        QListWidgetItem *nameItem = new QListWidgetItem(QString::fromStdString(FileNames[i]));
+        QListWidgetItem *dateItem = new QListWidgetItem(QString::fromStdString(DateTime[i]));
+
+        ui->NameList->addItem(nameItem);
+        ui->DateList->addItem(dateItem);
+    }
+}
+
+void MainWindow::CastToRelevantPath(QString& InitialPath){
+    for (int i = 0; i < InitialPath.size(); ++i){
+        if(InitialPath[i] == '/'){
+            InitialPath.erase(InitialPath.begin() + i);
+            InitialPath.insert(i, "\\\\");
+        }
+    }
+}
