@@ -15,9 +15,13 @@ MainWindow::MainWindow(QWidget *parent)
     ui->PathLineEdit->setDisabled(true);
 
     ui->BytesSumText->setReadOnly(true);
-
+#ifdef ANDRII_SERVER
     ipAddr = "10.0.1.15";
-    // ipAddr = "10.211.55.6";
+#elif defined(DANYLO_SERVER)
+    ipAddr = "10.211.55.6";
+#else
+    QMessageBox::critical(this, "Connection", "Please define local ipv4 adress!");
+#endif
 }
 
 MainWindow::~MainWindow()
@@ -91,7 +95,7 @@ int MainWindow::SendServerRequest(QString MessageToSend){
 
     if (ConnectSocket == INVALID_SOCKET) {
         QString LogMessage = "Unable to connect to server!";
-        QMessageBox::information(this, "Output", LogMessage);
+        QMessageBox::critical(this, "Output", LogMessage);
         WSACleanup();
         return 1;
     }
@@ -100,20 +104,19 @@ int MainWindow::SendServerRequest(QString MessageToSend){
     iResult = send( ConnectSocket, sendbuf, (int)strlen(sendbuf), 0 );
     if (iResult == SOCKET_ERROR) {
         QString LogMessage = "send failed with error: " + WSAGetLastError();
-        QMessageBox::information(this, "Output", LogMessage);
+        QMessageBox::critical(this, "Output", LogMessage);
         closesocket(ConnectSocket);
         WSACleanup();
         return 1;
     }
 
-    QString Message = "Bytes Sent: " + QString::number(iResult);
-    QMessageBox::information(this, "Output", Message);
+    qDebug() << "Bytes Sent: " + iResult;
 
     // shutdown the connection since no more data will be sent
     iResult = shutdown(ConnectSocket, SD_SEND);
     if (iResult == SOCKET_ERROR) {
         QString LogMessage = "shutdown failed with error: " + WSAGetLastError();
-        QMessageBox::information(this, "Output", LogMessage);
+        QMessageBox::critical(this, "Output", LogMessage);
         closesocket(ConnectSocket);
         WSACleanup();
         return 1;
@@ -122,20 +125,15 @@ int MainWindow::SendServerRequest(QString MessageToSend){
     // Receive until the peer closes the connection
     do {
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
-        QString LogMessage;
         if ( iResult > 0 ){
             DivideReceivedMessage(recvbuf);
-
-            LogMessage += "Bytes received: " + QString::number(iResult) + "\nReceived message: " + recvbuf;
-            QMessageBox::information(this, "Output", LogMessage);
+            qDebug() << "Bytes received: " << iResult << "\nReceived message: " << recvbuf;
         }
         else if ( iResult == 0 ){
-            LogMessage = "Connection closed";
-            QMessageBox::information(this, "Output", LogMessage);
+            qDebug() << "Connection closed";
         }
         else{
-            LogMessage = "recv failed with error: " + WSAGetLastError();
-            QMessageBox::information(this, "Output", LogMessage);
+            qDebug() << "recv failed with error: " << WSAGetLastError();
         }
 
     } while( iResult > 0 );
@@ -184,7 +182,11 @@ void MainWindow::on_pushButton_clicked()
 
     QString PathText;
     if(!ui->radioButton->isChecked()){
+#ifdef ANDRII_SERVER
         PathText = DEFAULT_ANDRII_PATH;
+#elif defined(DANYLO_SERVER)
+        PathText = DEFAULT_DANYLO_PATH;
+#endif
     }
     else{
         PathText = ui->PathLineEdit->text();
