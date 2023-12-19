@@ -17,6 +17,7 @@
 #include <filesystem>
 #include <QTimer>
 #include <QDebug>
+#include <ctime>
 #include "cache.h"
 
 #define DEFAULT_PORT "53"
@@ -45,6 +46,10 @@ private:
 
     static CacheClass temporary_cache;
 
+    static HANDLE LogHandle;
+
+    static LPWSTR LOG_PATH;
+
     bool InitializeSocket();
 
     bool CreateSocket();
@@ -70,6 +75,10 @@ private:
     static unsigned int GetSizeOfFile(const string& path);
 
     bool SendData(const char* name, const char* date, const char* size);
+
+    static void AddLog(string message);
+
+    static string GetDateTime();
 
 public:
     WinSockets();

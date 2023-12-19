@@ -2,6 +2,8 @@
 
 CRITICAL_SECTION WinSockets::Cr1TiKaL;
 CacheClass WinSockets::temporary_cache;
+HANDLE WinSockets::LogHandle;
+LPWSTR WinSockets::LOG_PATH = L"C:\\Users\\Akmitliviy\\Documents\\Log_OS\\Log.txt";
 
 WinSockets::WinSockets() {
     result = NULL;
@@ -17,11 +19,11 @@ bool WinSockets::InitializeSocket(){
     // Initialize Winsock
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
-        printf("WSAStartup failed: %d\n", iResult);
+        AddLog("WSAStartup failed: " + to_string(iResult));
         return false;
     }
 
-    printf( "Socket initialization succeed\n");
+    AddLog("Socket initialization succeed");
     return true;
 }
 
@@ -37,7 +39,7 @@ bool WinSockets::CreateSocket(){
     // Resolve the local address and port to be used by the server
     iResult = getaddrinfo(NULL, DEFAULT_PORT, &hints, &result);
     if (iResult != 0) {
-        printf("getaddrinfo failed: %d\n", iResult);
+        AddLog("getaddrinfo failed: " + to_string(iResult));
         WSACleanup();
         return false;
     }
@@ -45,13 +47,13 @@ bool WinSockets::CreateSocket(){
     ListenSocket = socket(result->ai_family, result->ai_socktype, result->ai_protocol);
 
     if (ListenSocket == INVALID_SOCKET) {
-        printf("Error at socket(): %d\n", WSAGetLastError());
+        AddLog("Error at socket(): " + to_string(WSAGetLastError()));
         freeaddrinfo(result);
         WSACleanup();
         return false;
     }
 
-    printf( "Socket creation succeed\n");
+    AddLog("Socket creation succeed\n");
     return true;
 }
 
@@ -61,7 +63,7 @@ bool WinSockets::BindSocket(){
     // Setup the TCP listening socket
     iResult = bind( ListenSocket, result->ai_addr, (int)result->ai_addrlen);
     if (iResult == SOCKET_ERROR) {
-        printf("bind failed with error: %d\n", WSAGetLastError());
+        AddLog("bind failed with error: " + to_string(WSAGetLastError()));
         freeaddrinfo(result);
         closesocket(ListenSocket);
         WSACleanup();
@@ -70,19 +72,19 @@ bool WinSockets::BindSocket(){
 
     freeaddrinfo(result);
 
-    printf( "bind succeed\n");
+    AddLog("bind succeed");
     return true;
 }
 
 bool WinSockets::ListenOnSocket(){
 
     if (listen( ListenSocket, SOMAXCONN ) == SOCKET_ERROR ) {
-        printf( "Listen failed with error: %d\n", WSAGetLastError() );
+        AddLog("Listen failed with error: " + to_string(WSAGetLastError()));
         closesocket(ListenSocket);
         WSACleanup();
         return false;
     }
-    printf( "Listen succeed\n");
+    AddLog("Listen succeed");
     return true;
 }
 
@@ -95,13 +97,14 @@ bool WinSockets::AcceptConnection(){
     while(true){
         ClientSocket = accept(ListenSocket, reinterpret_cast<sockaddr*> (&client_adress), &client_adress_size);
         if (ClientSocket == INVALID_SOCKET) {
-            printf("accept failed: %d\n", WSAGetLastError());
+
+            AddLog("accept failed with client " + string(inet_ntoa(client_adress.sin_addr)));
             closesocket(ListenSocket);
             WSACleanup();
             return false;
         }
 
-        printf( "Acception succeed\n");
+        AddLog("Acception succeed with client " + string(inet_ntoa(client_adress.sin_addr)));
 
         DWORD ThreadID;
         HANDLE ThreadHandle = CreateThread(NULL, NULL, WinSockets::ReceiveAndSend, &ClientSocket, NULL, &ThreadID);
@@ -126,7 +129,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0) {
 
-            printf("Bytes received: %d\n", iResult);
+            AddLog("Bytes received: " + to_string(iResult));
             std::string recvstr(recvbuf);
             if((result = temporary_cache.GetCachedData(recvstr)) == "empty")
             {
@@ -144,17 +147,17 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
             // Sending names
             iSendResult = send(ClientSocket, result.c_str(), result.size(), 0);
             if (iSendResult == SOCKET_ERROR) {
-                printf("send failed: %d\n", WSAGetLastError());
+                AddLog("send failed: " + to_string(WSAGetLastError()));
                 closesocket(ClientSocket);
                 WSACleanup();
                 return 1;
             }
-            printf("Bytes sent: %d\n", iSendResult);
+            AddLog("Bytes sent: " + to_string(iSendResult));
 
         } else if (iResult == 0)
-            printf("Connection closing...\n");
+            AddLog("Connection closing...");
         else {
-            printf("recv failed: %d\n", WSAGetLastError());
+            AddLog("Receiving failed: " + to_string(WSAGetLastError()));
             closesocket(ClientSocket);
             WSACleanup();
             return 2;
@@ -162,7 +165,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
 
     } while (iResult > 0);
 
-    printf( "Receive&Send succeed\n");
+    AddLog("Receive&Send succeed");
 
     Disconnect(ClientSocket);
     LeaveCriticalSection(&Cr1TiKaL);
@@ -185,7 +188,7 @@ bool WinSockets::Disconnect(SOCKET& ClientSocket){
     // shutdown the send half of the connection since no more data will be sent
     iResult = shutdown(ClientSocket, SD_SEND);
     if (iResult == SOCKET_ERROR) {
-        printf("shutdown failed: %d\n", WSAGetLastError());
+        AddLog("shutdown failed: " + to_string(WSAGetLastError()));
         closesocket(ClientSocket);
         WSACleanup();
         return false;
@@ -194,7 +197,7 @@ bool WinSockets::Disconnect(SOCKET& ClientSocket){
     // cleanup
     closesocket(ClientSocket);
 
-    printf( "Disconnection succeed\n");
+    AddLog("Disconnection succeed");
     return true;
 }
 
@@ -240,7 +243,7 @@ void WinSockets::ProcessReceivedData(const char* client_input, string& names, st
 #elif defined(DANYLO_SERVER)
     directory = DEFAULT_DANYLO_PATH;
 #else
-    printf("Defined wrong server owner (add #define ANDRII_SERVER of #define DANYLO_SERVER");
+    AddLog("Defined wrong server owner (add #define ANDRII_SERVER of #define DANYLO_SERVER)");
 #endif
 
     regex global_regular("[^\\|]+");
@@ -351,3 +354,27 @@ unsigned int WinSockets::GetSizeOfFile(const string& path){
 
     return FileSize;
 }
+
+void WinSockets::AddLog(string message){
+
+    if((LogHandle = CreateFile(LOG_PATH, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0)) == INVALID_HANDLE_VALUE){
+        return;
+    }
+
+    string time = "[" + GetDateTime() + "]:\t\t";
+
+    string output(time + message + "\n");
+    DWORD BytesWritten;
+    SetFilePointer(LogHandle, 0, NULL, FILE_END);
+    WriteFile(LogHandle, output.c_str(), output.size(), &BytesWritten, 0);
+
+    CloseHandle(LogHandle);
+}
+
+string WinSockets::GetDateTime(){
+    time_t CurrentTime = time(nullptr);
+    string ret_time = ctime(&CurrentTime);
+    ret_time.replace(ret_time.size() - 1, 1, "\0");
+    return ret_time;
+}
+
