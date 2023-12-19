@@ -9,9 +9,10 @@
 #include <string>
 #include <QMainWindow>
 #include <QMessageBox>
+#include <fstream>
 
-//#define DANYLO_SERVER
-#define ANDRII_SERVER
+#define DANYLO_SERVER
+//#define ANDRII_SERVER
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "53"
@@ -39,6 +40,8 @@ public:
     void ClearLists();
 
     void CastToRelevantPath(QString& InitialPath);
+
+    std::ofstream LogFile;
 
 private slots:
     void on_actionInstruction_triggered();

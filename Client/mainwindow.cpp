@@ -23,6 +23,8 @@ MainWindow::MainWindow(QWidget *parent)
 #else
     QMessageBox::critical(this, "Connection", "Please define local ipv4 adress!");
 #endif
+
+    LogFile.open("C:\\Users\\bossofthisgym\\Documents\\OS-Lab-9\\Client\\Log.txt", std::ios::trunc);
 }
 
 MainWindow::~MainWindow()
@@ -51,7 +53,7 @@ int MainWindow::SendServerRequest(QString MessageToSend){
     iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
     if (iResult != 0) {
         QString LogMessage = "WSAStartup failed with error: " + iResult;
-        QMessageBox::information(this, "Output", LogMessage);
+        QMessageBox::critical(this, "Output", LogMessage);
         return 1;
     }
 
@@ -111,7 +113,7 @@ int MainWindow::SendServerRequest(QString MessageToSend){
         return 1;
     }
 
-    qDebug() << "Bytes Sent: " + iResult;
+    LogFile << "Bytes Sent: " + iResult;
 
     // shutdown the connection since no more data will be sent
     iResult = shutdown(ConnectSocket, SD_SEND);
@@ -128,13 +130,13 @@ int MainWindow::SendServerRequest(QString MessageToSend){
         iResult = recv(ConnectSocket, recvbuf, recvbuflen, 0);
         if ( iResult > 0 ){
             DivideReceivedMessage(recvbuf);
-            qDebug() << "Bytes received: " << iResult << "\nReceived message: " << recvbuf;
+            LogFile << "\nBytes received: " << iResult << "\nReceived message: " << recvbuf;
         }
         else if ( iResult == 0 ){
-            qDebug() << "Connection closed";
+            LogFile << "\nConnection closed";
         }
         else{
-            qDebug() << "recv failed with error: " << WSAGetLastError();
+            LogFile << "\nrecv failed with error: " << WSAGetLastError();
         }
 
     } while( iResult > 0 );
@@ -181,7 +183,7 @@ void MainWindow::on_pushButton_clicked()
         }
     }
 
-    QString PathText = " ";
+    QString PathText = "\\";
 
     if(ui->radioButton->isChecked()){
         PathText = ui->PathLineEdit->text();
