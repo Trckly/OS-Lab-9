@@ -3,7 +3,14 @@
 CRITICAL_SECTION WinSockets::Cr1TiKaL;
 CacheClass WinSockets::temporary_cache;
 HANDLE WinSockets::LogHandle;
+
+#ifdef ANDRII_SERVER
 LPWSTR WinSockets::LOG_PATH = L"C:\\Users\\Akmitliviy\\Documents\\Log_OS\\Log.txt";
+#elif defined(DANYLO_SERVER)
+LPWSTR WinSockets::LOG_PATH = L"C:\\Users\\bossofthisgym\\Documents\\OS-Lab-9\\Client\\ServerLog.txt";
+#else
+LPWSTR WinSockets::LOG_PATH;
+#endif
 
 WinSockets::WinSockets() {
     result = NULL;
@@ -129,8 +136,8 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
         iResult = recv(ClientSocket, recvbuf, recvbuflen, 0);
         if (iResult > 0) {
 
-            AddLog("Bytes received: " + to_string(iResult));
             std::string recvstr(recvbuf);
+            AddLog("Received message: " + recvstr);
             if((result = temporary_cache.GetCachedData(recvstr)) == "empty")
             {
                 ProcessReceivedData(recvbuf, names, dates, size, except);
@@ -142,7 +149,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
                     result = "<" + except + ">";
                 }
                 temporary_cache.CacheData(recvstr, result);
-                qDebug() << "cache was not used!\n";
+                AddLog("cache was not used!");
             }
             // Sending names
             iSendResult = send(ClientSocket, result.c_str(), result.size(), 0);
@@ -152,7 +159,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
                 WSACleanup();
                 return 1;
             }
-            AddLog("Bytes sent: " + to_string(iSendResult));
+            AddLog("Sent message: " + string(result));
 
         } else if (iResult == 0)
             AddLog("Connection closing...");
@@ -177,7 +184,7 @@ DWORD WinSockets::TruncCacheTimer(LPVOID Param)
     while(true){
         Sleep(20000);
         temporary_cache.ClearCache();
-        qDebug() << "Cache cleared\n";
+        AddLog("Cache cleared");
     }
 }
 
@@ -229,7 +236,7 @@ void WinSockets::StartServer(){
 void WinSockets::ClearCache()
 {
     temporary_cache.ClearCache();
-    qDebug() << "Cache is cleared!\n";
+    AddLog("Cache is cleared!");
 }
 
 void WinSockets::ProcessReceivedData(const char* client_input, string& names, string& dates, string& size, string& except){

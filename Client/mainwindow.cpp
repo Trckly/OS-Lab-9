@@ -15,16 +15,17 @@ MainWindow::MainWindow(QWidget *parent)
     ui->PathLineEdit->setDisabled(true);
 
     ui->BytesSumText->setReadOnly(true);
+
 #ifdef ANDRII_SERVER
-    //ipAddr = "10.0.1.15";
     ipAddr = "127.0.0.1";
+    LogFile.open("C:\\Users\\Akmitliviy\\Documents\\Log_OS\\LogClient.txt", std::ios::trunc);
 #elif defined(DANYLO_SERVER)
     ipAddr = "10.211.55.6";
+    LogFile.open("C:\\Users\\bossofthisgym\\Documents\\OS-Lab-9\\Client\\Log.txt", std::ios::trunc);
 #else
     QMessageBox::critical(this, "Connection", "Please define local ipv4 adress!");
 #endif
 
-    LogFile.open("C:\\Users\\bossofthisgym\\Documents\\OS-Lab-9\\Client\\Log.txt", std::ios::trunc);
 }
 
 MainWindow::~MainWindow()

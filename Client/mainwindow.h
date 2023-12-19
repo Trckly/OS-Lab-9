@@ -11,8 +11,8 @@
 #include <QMessageBox>
 #include <fstream>
 
-#define DANYLO_SERVER
-//#define ANDRII_SERVER
+//#define DANYLO_SERVER
+#define ANDRII_SERVER
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "53"
