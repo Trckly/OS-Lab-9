@@ -7,6 +7,8 @@ WinSockets::WinSockets() {
     result = NULL;
     ptr = NULL;
     ListenSocket = INVALID_SOCKET;
+
+    CreateThread(0, 0, TruncCacheTimer, 0, 0, 0);
 }
 
 bool WinSockets::InitializeSocket(){
@@ -137,6 +139,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
                     result = "<" + except + ">";
                 }
                 temporary_cache.CacheData(recvstr, result);
+                qDebug() << "cache was not used!\n";
             }
             // Sending names
             iSendResult = send(ClientSocket, result.c_str(), result.size(), 0);
@@ -164,6 +167,15 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
     Disconnect(ClientSocket);
     LeaveCriticalSection(&Cr1TiKaL);
     return 0;
+}
+
+DWORD WinSockets::TruncCacheTimer(LPVOID Param)
+{
+    while(true){
+        Sleep(20000);
+        temporary_cache.ClearCache();
+        qDebug() << "Cache cleared\n";
+    }
 }
 
 bool WinSockets::Disconnect(SOCKET& ClientSocket){
@@ -211,10 +223,11 @@ void WinSockets::StartServer(){
 
 }
 
-// void WinSockets::ClearCache()
-// {
-//     temporary_cache.ClearCache();
-// }
+void WinSockets::ClearCache()
+{
+    temporary_cache.ClearCache();
+    qDebug() << "Cache is cleared!\n";
+}
 
 void WinSockets::ProcessReceivedData(const char* client_input, string& names, string& dates, string& size, string& except){
     string input_string(client_input);

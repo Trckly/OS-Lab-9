@@ -16,6 +16,7 @@
 #include <regex>
 #include <filesystem>
 #include <QTimer>
+#include <QDebug>
 #include "cache.h"
 
 #define DEFAULT_PORT "53"
@@ -48,6 +49,8 @@ private:
 
     static DWORD WINAPI ReceiveAndSend(LPVOID ClientSocket);
 
+    static DWORD WINAPI TruncCacheTimer(LPVOID Param);
+
     static bool Disconnect(SOCKET& ClientSocket);
 
     static void ProcessReceivedData(const char* client_input, string& name, string& date, string& size, string& except);
@@ -67,7 +70,7 @@ public:
 
     void StartServer();
 
-    // void ClearCache();
+    void ClearCache();
 };
 
 #endif // WINSOCKETS_H
