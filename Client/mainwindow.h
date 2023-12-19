@@ -10,13 +10,11 @@
 #include <QMainWindow>
 #include <QMessageBox>
 
-#define DANYLO_SERVER
-//#define ANDRII_SERVER
+//#define DANYLO_SERVER
+#define ANDRII_SERVER
 
 #define DEFAULT_BUFLEN 512
 #define DEFAULT_PORT "53"
-#define DEFAULT_ANDRII_PATH "D:\\OS\\Lab09_OS\\SearchDirectory"
-#define DEFAULT_DANYLO_PATH "C:\\Users\\bossofthisgym\\Documents\\ServerMainDirectory"
 
 QT_BEGIN_NAMESPACE
 namespace Ui {

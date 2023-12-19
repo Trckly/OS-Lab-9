@@ -222,6 +222,14 @@ void WinSockets::ProcessReceivedData(const char* client_input, string& names, st
     string directory;
     string extention;
 
+#ifdef ANDRII_SERVER
+    directory = DEFAULT_ANDRII_PATH;
+#elif defined(DANYLO_SERVER)
+    directory = DEFAULT_DANYLO_PATH;
+#else
+    printf("Defined wrong server owner (add #define ANDRII_SERVER of #define DANYLO_SERVER");
+#endif
+
     regex global_regular("[^\\|]+");
     auto words_begin = sregex_iterator(input_string.begin(), input_string.end(), global_regular);
     auto words_end = sregex_iterator();
@@ -229,7 +237,8 @@ void WinSockets::ProcessReceivedData(const char* client_input, string& names, st
     if(words_begin != words_end)
     {
         smatch match_result = *words_begin;
-        directory = match_result.str();
+        if(match_result.str() != " ")
+            directory += "\\" + match_result.str();
         words_begin++;
     }
 
@@ -246,7 +255,8 @@ void WinSockets::ProcessReceivedData(const char* client_input, string& names, st
         for(const auto& entry : std::filesystem::directory_iterator{directory}){
 
             string dir_member = entry.path().generic_string();
-            if(dir_member.rfind(extention) != string::npos){
+            auto position = dir_member.rfind(extention);
+            if(position != string::npos && extention.size() == dir_member.size() - position){
                 bExist = true;
 
                 names += ExtractFileName(dir_member) + "|";

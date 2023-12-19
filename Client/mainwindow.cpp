@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     ui->BytesSumText->setReadOnly(true);
 #ifdef ANDRII_SERVER
-    ipAddr = "10.0.1.15";
+    //ipAddr = "10.0.1.15";
+    ipAddr = "127.0.0.1";
 #elif defined(DANYLO_SERVER)
     ipAddr = "10.211.55.6";
 #else
@@ -180,15 +181,9 @@ void MainWindow::on_pushButton_clicked()
         }
     }
 
-    QString PathText;
-    if(!ui->radioButton->isChecked()){
-#ifdef ANDRII_SERVER
-        PathText = DEFAULT_ANDRII_PATH;
-#elif defined(DANYLO_SERVER)
-        PathText = DEFAULT_DANYLO_PATH;
-#endif
-    }
-    else{
+    QString PathText = " ";
+
+    if(ui->radioButton->isChecked()){
         PathText = ui->PathLineEdit->text();
         CastToRelevantPath(PathText);
     }

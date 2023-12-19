@@ -21,6 +21,12 @@
 #define DEFAULT_PORT "53"
 #define DEFAULT_BUFLEN 512
 
+//#define DANYLO_SERVER
+#define ANDRII_SERVER
+
+#define DEFAULT_ANDRII_PATH "D:\\OS\\Lab09_OS\\SearchDirectory"
+#define DEFAULT_DANYLO_PATH "C:\\Users\\bossofthisgym\\Documents\\ServerMainDirectory"
+
 using namespace std;
 
 class WinSockets
@@ -35,6 +41,8 @@ private:
     static CRITICAL_SECTION Cr1TiKaL;
 
     map<DWORD, HANDLE> threads;
+
+    static CacheClass temporary_cache;
 
     bool InitializeSocket();
 
@@ -59,8 +67,6 @@ private:
     static unsigned int GetSizeOfFile(const string& path);
 
     bool SendData(const char* name, const char* date, const char* size);
-
-    static CacheClass temporary_cache;
 
 public:
     WinSockets();
