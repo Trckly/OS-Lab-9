@@ -1,0 +1,7 @@
+Sent: 
+Bytes received: 104
+Received message: a.txt|is.txt|test.txt|this.txt|?19.12.2023 10:27|19.12.2023 10:27|19.12.2023 10:27|19.12.2023 10:27|?56?
+Connection closed
+Bytes received: 90
+Received message: Directory.txt|Server.txt|Test.txt|?19.12.2023 10:29|19.12.2023 10:29|19.12.2023 10:29|?60?š/y
+Connection closed
