@@ -15,6 +15,8 @@
 #include <iterator>
 #include <regex>
 #include <filesystem>
+#include <QTimer>
+#include "cache.h"
 
 #define DEFAULT_PORT "53"
 #define DEFAULT_BUFLEN 512
@@ -58,11 +60,14 @@ private:
 
     bool SendData(const char* name, const char* date, const char* size);
 
+    static CacheClass temporary_cache;
+
 public:
     WinSockets();
 
     void StartServer();
 
+    // void ClearCache();
 };
 
 #endif // WINSOCKETS_H

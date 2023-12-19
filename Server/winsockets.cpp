@@ -1,6 +1,7 @@
 #include "winsockets.h"
 
 CRITICAL_SECTION WinSockets::Cr1TiKaL;
+CacheClass WinSockets::temporary_cache;
 
 WinSockets::WinSockets() {
     result = NULL;
@@ -124,14 +125,18 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
         if (iResult > 0) {
 
             printf("Bytes received: %d\n", iResult);
+            std::string recvstr(recvbuf);
+            if((result = temporary_cache.GetCachedData(recvstr)) == "empty")
+            {
+                ProcessReceivedData(recvbuf, names, dates, size, except);
 
-            ProcessReceivedData(recvbuf, names, dates, size, except);
-
-            if(except.empty()){
-                result = names + "?" + dates + "?" + size + "?";
-            }
-            else{
-                result = "<" + except + ">";
+                if(except.empty()){
+                    result = names + "?" + dates + "?" + size + "?";
+                }
+                else{
+                    result = "<" + except + ">";
+                }
+                temporary_cache.CacheData(recvstr, result);
             }
             // Sending names
             iSendResult = send(ClientSocket, result.c_str(), result.size(), 0);
@@ -205,6 +210,11 @@ void WinSockets::StartServer(){
     WSACleanup();
 
 }
+
+// void WinSockets::ClearCache()
+// {
+//     temporary_cache.ClearCache();
+// }
 
 void WinSockets::ProcessReceivedData(const char* client_input, string& names, string& dates, string& size, string& except){
     string input_string(client_input);
