@@ -115,7 +115,7 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
     char recvbuf[DEFAULT_BUFLEN];
     int iResult, iSendResult;
     int recvbuflen = DEFAULT_BUFLEN;
-    string names, dates, size, result = "Nothing";
+    string names, dates, size, except, result = "Nothing";
 
     // Receive until the peer shuts down the connection
     do {
@@ -125,9 +125,14 @@ DWORD WINAPI WinSockets::ReceiveAndSend(LPVOID ClientSocketInput){
 
             printf("Bytes received: %d\n", iResult);
 
-            ProcessReceivedData(recvbuf, names, dates, size);
+            ProcessReceivedData(recvbuf, names, dates, size, except);
 
-            result = names + "?" + dates + "?" + size + "?";
+            if(except.empty()){
+                result = names + "?" + dates + "?" + size + "?";
+            }
+            else{
+                result = "<" + except + ">";
+            }
             // Sending names
             iSendResult = send(ClientSocket, result.c_str(), result.size(), 0);
             if (iSendResult == SOCKET_ERROR) {
@@ -201,7 +206,7 @@ void WinSockets::StartServer(){
 
 }
 
-void WinSockets::ProcessReceivedData(const char* client_input, string& names, string& dates, string& size){
+void WinSockets::ProcessReceivedData(const char* client_input, string& names, string& dates, string& size, string& except){
     string input_string(client_input);
 
     string directory;
@@ -225,22 +230,30 @@ void WinSockets::ProcessReceivedData(const char* client_input, string& names, st
     }
 
     unsigned int i_size(0);
-    for(const auto& entry : std::filesystem::directory_iterator{directory}){
 
-        string dir_member = entry.path().generic_string();
-        if(dir_member.rfind(extention) != string::npos){
+    bool bExist(false);
+    try{
+        for(const auto& entry : std::filesystem::directory_iterator{directory}){
 
-            names += ExtractFileName(dir_member) + "|";
-            dates += GetCreationTime(dir_member) + "|";
-            i_size += GetSizeOfFile(dir_member);
+            string dir_member = entry.path().generic_string();
+            if(dir_member.rfind(extention) != string::npos){
+                bExist = true;
+
+                names += ExtractFileName(dir_member) + "|";
+                dates += GetCreationTime(dir_member) + "|";
+                i_size += GetSizeOfFile(dir_member);
+            }
         }
+        size = to_string(i_size);
     }
-    size = to_string(i_size);
+    catch(exception& ex){
+        except = "There is no such directory, try another path";
+        return;
+    }
 
-    if(names.empty() || dates.empty()){
-        names = "Error";
-        dates = "Error";
-        size = "Error";
+    if(!bExist){
+        except = "There are no files with provided extention";
+        return;
     }
 
     return;

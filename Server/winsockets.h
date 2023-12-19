@@ -48,7 +48,7 @@ private:
 
     static bool Disconnect(SOCKET& ClientSocket);
 
-    static void ProcessReceivedData(const char* client_input, string& name, string& date, string& size);
+    static void ProcessReceivedData(const char* client_input, string& name, string& date, string& size, string& except);
 
     static string ExtractFileName(const string& path);
 
